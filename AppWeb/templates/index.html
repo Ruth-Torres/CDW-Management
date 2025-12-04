@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏗️ Clasificador Inteligente de Materiales</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>🏗️ Clasificador Inteligente de Materiales</h1>
+        <p>Análisis automático de residuos de construcción y demolición con IA</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Panel de Control (Izquierda) -->
+        <aside class="control-panel">
+            <h2>🎛️ Panel de Control</h2>
+            
+            <!-- Área de carga de archivos mejorada -->
+            <div class="upload-section">
+                <label for="file-input" class="file-drop-zone">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">
+                        <strong>Cargar Imágenes</strong>
+                        <p>Arrastra archivos o haz clic</p>
+                    </div>
+                </label>
+                <input type="file" id="file-input" name="files" multiple accept="image/*" style="display: none;">
+            </div>
+            
+            <!-- Sección de Cámara -->
+            <div class="camera-section">
+                <h3>📷 Detección en Tiempo Real</h3>
+                <div class="camera-controls">
+                    <button id="start-camera" class="camera-btn">🎥 Iniciar Cámara</button>
+                    <button id="stop-camera" class="camera-btn" style="display: none;">⏹️ Detener Cámara</button>
+                    <button id="capture-photo" class="camera-btn" style="display: none;">📸 Capturar</button>
+                    <button id="switch-camera" class="camera-btn" style="display: none;">🔄 Cambiar</button>
+                </div>
+                <div class="camera-status" id="camera-status">
+                    <p>Cámara desconectada</p>
+                </div>
+            </div>
+            
+            <div class="model-info">
+                <h3>ℹ️ Información del Modelo</h3>
+                <p><strong>Dispositivo:</strong> <span id="device-info" class="{{ 'gpu' if device_type == 'CUDA' else 'cpu' }}">{{ device_type }}</span></p>
+                <p><strong>Clases detectables:</strong> {{ class_names|length }}</p>
+            </div>
+
+            <div class="class-list">
+                <h3>📋 Materiales Detectables</h3>
+                <div class="classes-container">
+                    {% for class_name in class_names %}
+                        <div class="class-item">{{ class_emojis.get(class_name, '📦') }} {{ class_display_names.get(class_name, class_name.capitalize()) }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Panel de Estadísticas Nuevo -->
+            <div class="stats-section">
+                <h3>📊 Estadísticas de Sesión</h3>
+                <div class="stats-grid-mini">
+                    <div class="stat-mini">
+                        <span class="stat-number" id="total-processed">0</span>
+                        <span class="stat-label">Procesadas</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-number" id="avg-confidence">0%</span>
+                        <span class="stat-label">Confianza Prom.</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-number" id="most-common">N/A</span>
+                        <span class="stat-label">Más Común</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Herramientas -->
+            <div class="tools-section">
+                <h3>🛠️ Herramientas</h3>
+                <button id="export-btn" class="tool-button" disabled>
+                    📥 Exportar CSV
+                </button>
+                <button id="clear-session" class="tool-button">
+                    🗑️ Limpiar Sesión
+                </button>
+                <button id="toggle-stats" class="tool-button">
+                    📈 Ver Gráficos
+                </button>
+            </div>
+        </aside>
+
+        <!-- Panel de Resultados (Derecha) -->
+        <main class="results-panel">
+            <div id="status-area">
+                <div id="loader" class="loader" style="display: none;"></div>
+                <p id="progress-text">Listo para análisis</p>
+            </div>
+            
+            <div id="results-grid">
+                <!-- Mensaje de bienvenida inicial -->
+                <div class="welcome-message">
+                    <div class="welcome-icon">🏗️</div>
+                    <h2>¡Bienvenido al Clasificador!</h2>
+                    <p>Selecciona una o más imágenes para comenzar el análisis automático.</p>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">🤖</div>
+                            <div class="stat-info">
+                                <strong>Modelo: ResNet-50</strong>
+                                <span>Red neuronal convolucional</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-info">
+                                <strong>{{ device_type }}</strong>
+                                <span>Procesamiento acelerado</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-info">
+                                <strong>{{ class_names|length }} Clases</strong>
+                                <span>Materiales diferentes</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-info">
+                                <strong>Análisis Detallado</strong>
+                                <span>Probabilidades por clase</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Área de Cámara en Tiempo Real -->
+            <div id="camera-area" class="camera-area" style="display: none;">
+                <div class="camera-container">
+                    <video id="camera-video" autoplay muted playsinline></video>
+                    <canvas id="camera-canvas" style="display: none;"></canvas>
+                    <div class="camera-overlay">
+                        <div class="detection-frame"></div>
+                        <div id="live-prediction" class="live-prediction-box">
+                            <div class="prediction-content">
+                                <div class="prediction-class">📷 Apunta a un material</div>
+                                <div class="prediction-confidence">Confianza: --</div>
+                                <div class="prediction-time">Última detección: --</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para vista detallada -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">×</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal para Grad-CAM -->
+    <div id="gradcam-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-gradcam-modal">×</span>
+            <div id="gradcam-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal para gráficos estadísticos -->
+    <div id="stats-modal" class="modal">
+        <div class="modal-content stats-modal-content">
+            <span class="close-button" id="close-stats-modal">×</span>
+            <h2>📊 Dashboard de Estadísticas</h2>
+            <div id="charts-container">
+                <div class="chart-section">
+                    <h3>Distribución por Clase</h3>
+                    <canvas id="class-distribution-chart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-section">
+                    <h3>Niveles de Confianza</h3>
+                    <canvas id="confidence-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de progreso mejorado -->
+    <div id="progress-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>🔄 Procesando Imágenes</h3>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-percentage">0%</div>
+            </div>
+            <div id="current-file">Preparando...</div>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <p>Desarrollado con Flask y PyTorch</p>
+        <p id="current-time"></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='main.js') }}?v=5.0"></script>
+</body>
+</html>
