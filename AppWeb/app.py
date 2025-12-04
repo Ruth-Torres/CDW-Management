@@ -316,7 +316,7 @@ def save_session_result(result_data):
         'probabilities': json.dumps(result_data['probabilities'])
     })
 
-def export_results_csv():
+def export_results_csv(lang='es'):
     """Exporta los resultados de la sesión a CSV con cabeceras legibles y acentos correctos (UTF-8 BOM)."""
     # Genera CSV en memoria → útil para exportación rápida desde frontend.
     if not session_results:
@@ -326,9 +326,12 @@ def export_results_csv():
     # Escribir BOM para compatibilidad con Excel
     output.write('\ufeff')  
     
+    # Obtener traducciones según idioma
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['es'])
+    
     writer = csv.DictWriter(
         output,
-        fieldnames=['Timestamp', 'Nombre del archivo', 'Material', 'Probabilidad', 'Top 3 de probabilidades (>50%)'],
+        fieldnames=[t['Timestamp'], t['Nombre del archivo'], t['Material'], t['Probabilidad'], t['Top 3 de probabilidades (>50%)']],
         delimiter=';'
     )
     writer.writeheader()
@@ -337,20 +340,21 @@ def export_results_csv():
         # Filtrar top 3 probabilidades mayores a 50%
         probs = [p for p in json.loads(result['probabilities']) if p['probability'] > 50][:3]
         top_3 = '; '.join([
-            f"{CLASS_DISPLAY_NAMES.get(p['class_name'], p['class_name'].capitalize())}: {p['probability']:.1f}%"
+            f"{t.get(p['class_name'], p['class_name'].capitalize())}: {p['probability']:.1f}%"
             for p in probs
         ])
         
         writer.writerow({
-            'Timestamp': result['timestamp'],
-            'Nombre del archivo': result['filename'],
-            'Material': CLASS_DISPLAY_NAMES.get(result['predicted_class'], result['predicted_class'].capitalize()),
-            'Probabilidad': f"{result['confidence']:.1f}%",
-            'Top 3 de probabilidades (>50%)': top_3
+            t['Timestamp']: result['timestamp'],
+            t['Nombre del archivo']: result['filename'],
+            t['Material']: t.get(result['predicted_class'], result['predicted_class'].capitalize()),
+            t['Probabilidad']: f"{result['confidence']:.1f}%",
+            t['Top 3 de probabilidades (>50%)']: top_3
         })
     
     output.seek(0)
     return output.getvalue()
+
 
 # --- Manejo de Errores ---
 @app.errorhandler(500)
@@ -366,6 +370,11 @@ def internal_error(e):
 # - /api/* : Endpoints JSON para stats, exportación, health, etc.
 # - /classify/camera : Flujo optimizado para cámaras en tiempo real
 # - /api/gradcam : Generación de Grad-CAM
+
+# Cargar traducciones
+with open(os.path.join(BASE_DIR, "static/locales/translations.json"), "r", encoding="utf-8") as f:
+    TRANSLATIONS = json.load(f)
+
 @app.route('/')
 def index():
     """Renderiza la página principal."""
@@ -373,7 +382,6 @@ def index():
     return render_template('index.html', 
                          class_names=CLASS_NAMES, 
                          class_emojis=CLASS_EMOJIS,
-                         class_display_names=CLASS_DISPLAY_NAMES,
                          device_type=device_name)
 
 @app.route('/classify', methods=['POST'])
@@ -524,11 +532,14 @@ def get_api_statistics():
 def export_session_results():
     """API para exportar resultados de la sesión actual."""
     try:
-        csv_data = export_results_csv()
+        # Obtener idioma desde frontend
+        lang = request.args.get('lang', 'es')
+        csv_data = export_results_csv(lang=lang)
         if not csv_data:
             return jsonify({'error': 'No hay resultados para exportar'}), 404
         
-        filename = f"Resultados_sesion_{datetime.now().strftime('%Y%m%d__%H%M%S')}.csv"
+        t = TRANSLATIONS.get(lang, TRANSLATIONS['es'])
+        filename = f"{t['session_results_filename']}_{datetime.now().strftime('%Y%m%d__%H%M%S')}.csv"
         
         response = app.response_class(
             csv_data,
@@ -539,6 +550,7 @@ def export_session_results():
     except Exception as e:
         print(f"Error exportando resultados: {e}")
         return jsonify({'error': 'Error exportando resultados'}), 500
+
 
 @app.route('/api/clear_session', methods=['POST'])
 def clear_session_api():

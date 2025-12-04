@@ -1,0 +1,44 @@
+{
+  "es": {
+    "hormigon": "Hormigón",
+    "ceramico": "Cerámico",
+    "piedra": "Piedra",
+    "yeso": "Yeso",
+    "asfaltico": "Asfáltico",
+    "basura_general": "Residuos Generales",
+    "Timestamp": "Timestamp",
+    "Nombre del archivo": "Nombre del archivo",
+    "Material": "Material",
+    "Probabilidad": "Probabilidad",
+    "Top 3 de probabilidades (>50%)": "Top 3 de probabilidades (>50%)",
+    "session_results_filename": "Resultados_sesion"
+  },
+  "en": {
+    "hormigon": "Concrete",
+    "ceramico": "Ceramic",
+    "piedra": "Stone",
+    "yeso": "Gypsum",
+    "asfaltico": "Asphalt",
+    "basura_general": "General Waste",
+    "Timestamp": "Timestamp",
+    "Nombre del archivo": "File name",
+    "Material": "Material",
+    "Probabilidad": "Probability",
+    "Top 3 de probabilidades (>50%)": "Top 3 probabilities (>50%)",
+    "session_results_filename": "Session_results"
+  },
+  "fr": {
+    "hormigon": "Béton",
+    "ceramico": "Céramique",
+    "piedra": "Pierre",
+    "yeso": "Gypse",
+    "asfaltico": "Asphalte",
+    "basura_general": "Déchets non inertes",
+    "Timestamp": "Timestamp",
+    "Nombre del archivo": "Nom du fichier",
+    "Material": "Matériau",
+    "Probabilidad": "Probabilité",
+    "Top 3 de probabilidades (>50%)": "Top 3 des probabilités (>50%)",
+    "session_results_filename": "Résultats_de_session"
+  }
+}

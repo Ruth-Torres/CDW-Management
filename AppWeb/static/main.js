@@ -182,7 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const file of files) {
                 console.log('Validando archivo:', file.name, 'Tipo:', file.type);
                 if (!file.type.startsWith('image/')) {
-                    alert(`El archivo "${file.name}" no es una imagen válida.`);
+                    alert(i18next.t('file_not_image', { filename: file.name }));
+                    //alert(`El archivo "${file.name}" no es una imagen válida.`);
                     continue;
                 }
                 
@@ -205,8 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             resultsGrid.innerHTML = '';
             loader.style.display = 'block';
-            progressText.textContent = `Analizando ${validFiles.length} imagen(es) automáticamente...`;
-
+            // progressText.textContent = `Analizando ${validFiles.length} imagen(es) automáticamente...`;
+            progressText.textContent = i18next.t('processing_images_automatically', { count: validFiles.length });
             const formData = new FormData();
             for (const file of validFiles) {
                 formData.append('files', file);
@@ -237,8 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Actualizar estadísticas con los nuevos resultados
                 updateLocalStats(data.results);
                 
-                progressText.textContent = `Análisis completado: ${data.results.length} imagen(es) procesadas.`;
-                showNotification(`✅ ${data.results.length} imagen(es) procesadas exitosamente`, 'success');
+                //progressText.textContent = `Análisis completado: ${data.results.length} imagen(es) procesadas.`;
+                progressText.textContent = i18next.t('analysis_completed', { count: data.results.length });
+                //showNotification(`✅ ${data.results.length} imagen(es) procesadas exitosamente`, 'success');
+                showNotification(i18next.t('images_processed_success', { count: data.results.length }), 'success');
             } else {
                 throw new Error('No se obtuvieron resultados válidos del servidor.');
             }
@@ -247,24 +250,38 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error:', error);
             
             // Mejorar el manejo de errores específicos
-            let errorMessage = 'Ocurrió un error durante el análisis.';
-            
+            //let errorMessage = 'Ocurrió un error durante el análisis.';
+            let errorMessage = i18next.t('error_generic');
+
             if (error.message.includes('413') || error.message.includes('Entity Too Large')) {
-                errorMessage = 'Las imágenes son demasiado grandes. Intenta con imágenes más pequeñas.';
+                //errorMessage = 'Las imágenes son demasiado grandes. Intenta con imágenes más pequeñas.';
+                errorMessage = i18next.t('error_too_large');
             } else if (error.message.includes('Failed to fetch')) {
-                errorMessage = 'Error de conexión. Verifica tu conexión a internet e inténtalo de nuevo.';
+                //errorMessage = 'Error de conexión. Verifica tu conexión a internet e inténtalo de nuevo.';
+                errorMessage = i18next.t('error_connection');
             } else if (error.message.includes('timeout')) {
-                errorMessage = 'El procesamiento está tomando demasiado tiempo. Intenta con menos imágenes.';
+                //errorMessage = 'El procesamiento está tomando demasiado tiempo. Intenta con menos imágenes.';
+                errorMessage = i18next.t('error_timeout');
             }
             
             progressText.textContent = errorMessage;
-            resultsGrid.innerHTML = `
+            /*resultsGrid.innerHTML = `
                 <div style="text-align: center; color: red; padding: 20px;">
                     <h3>❌ Error en el Análisis</h3>
                     <p>${errorMessage}</p>
                     <p style="font-size: 0.9em; color: #666; margin-top: 10px;">Detalles técnicos: ${error.message}</p>
                     <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
                         🔄 Reintentar
+                    </button>
+                </div>
+            `;*/
+            resultsGrid.innerHTML = `
+                <div style="text-align: center; color: red; padding: 20px;">
+                    <h3>${i18next.t('error_analysis_title')}</h3>
+                    <p>${errorMessage}</p>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">Detalles técnicos: ${error.message}</p>
+                    <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        ${i18next.t('retry')}
                     </button>
                 </div>
             `;
@@ -280,7 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayResults(results) {
         resultsGrid.innerHTML = '';
         if (results.length === 0) {
-            resultsGrid.innerHTML = '<p>No se obtuvieron resultados válidos.</p>';
+            // resultsGrid.innerHTML = '<p>No se obtuvieron resultados válidos.</p>';
+            resultsGrid.innerHTML = i18next.t('no_valid_results');
             return;
         }
 
@@ -303,12 +321,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(prob => {
                 const color = getConfidenceColor(prob.probability);
                 const emoji = CLASS_EMOJIS[prob.class_name] || '📦';
-                return `<div style="font-size: 0.8em; color: ${color}; margin-bottom: 2px;">
+
+                /*return `<div style="font-size: 0.8em; color: ${color}; margin-bottom: 2px;">
                             ${emoji} ${classDisplayNames[prob.class_name] || prob.class_name}: ${prob.probability.toFixed(1)}%
+                        </div>`;*/
+                const materialTranslated = i18next.t(`materials.${prob.class_name}`);
+                return `<div style="font-size: 0.8em; color: ${color}; margin-bottom: 2px;">
+                            ${emoji} ${materialTranslated}: ${prob.probability.toFixed(1)}%
                         </div>`;
             }).join('');
 
-        card.innerHTML = `
+        /*card.innerHTML = `
             <img src="${result.image_url}" alt="${result.filename}" 
                  onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22 viewBox=%220 0 200 150%22><rect width=%22200%22 height=%22150%22 fill=%22%23f8f9fa%22 stroke=%22%23dee2e6%22/><text x=%2250%25%22 y=%2250%25%22 font-family=%22Arial%22 font-size=%2214%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22>Error cargando</text></svg>';">
             <div class="info">
@@ -325,12 +348,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="details-button">📊 Ver Probabilidades</button>
                 <button class="gradcam-button">🗺️ Ver mapa de zonas</button>
             </div>
+        `;*/
+        const predictedTranslated = i18next.t(`materials.${result.predicted_class}`);
+        card.innerHTML = `
+            <img src="${result.image_url}" alt="${result.filename}" 
+                 onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22 viewBox=%220 0 200 150%22><rect width=%22200%22 height=%22150%22 fill=%22%23f8f9fa%22 stroke=%22%23dee2e6%22/><text x=%2250%25%22 y=%2250%25%22 font-family=%22Arial%22 font-size=%2214%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22>Error cargando</text></svg>';">
+            <div class="info">
+                <h4>${result.filename}</h4>
+                <div class="prediction" style="background-color: ${result.color}; color: white;">
+                    ${result.emoji} ${predictedTranslated}
+                </div>
+                <p class="confidence">
+                    ${i18next.t('confidence_label')} <span style="color: ${confidenceColor};">${result.confidence.toFixed(1)}%</span>
+                </p>
+                <div class="probabilities-list">
+                    ${probsHTML}
+                </div>
+                <button class="details-button">${i18next.t('view_probabilities')}</button>
+                <button class="gradcam-button">${i18next.t('view_heatmap')}</button>
+            </div>
         `;
 
         // Abrir imagen en nueva pestaña al hacer clic en la imagen
         const imgElement = card.querySelector('img');
         imgElement.style.cursor = 'pointer'; // para que el usuario vea que se puede clicar
-        imgElement.title = 'Ver imagen';     // mensaje al pasar el ratón
+        //imgElement.title = 'Ver imagen';     // mensaje al pasar el ratón
+        imgElement.title = i18next.t('view_image');
         imgElement.addEventListener('click', () => {
             window.open(result.image_url, '_blank'); // abre la imagen en otra pestaña
         });
@@ -357,19 +400,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para mostrar el modal con detalles
     function showDetailsModal(result) {
-        let probabilitiesHTML = '<div id="modal-probs"><h3>📊 Probabilidades por Clase</h3>';
+        // let probabilitiesHTML = '<div id="modal-probs"><h3>📊 Probabilidades por Clase</h3>';
+        let probabilitiesHTML = i18next.t('probabilities_HTML');
         
         result.probabilities.forEach((prob, index) => {
             const color = getConfidenceColor(prob.probability);
             const emoji = CLASS_EMOJIS[prob.class_name] || '📦';
             const percentage = prob.probability.toFixed(1);
             const widthPercentage = Math.max(prob.probability, 1); // Mínimo 1% para visibilidad
+            const materialTranslated = i18next.t(`materials.${prob.class_name}`);
             
             // Debug: Log para verificar los valores
             if (index < 3) { // Solo los primeros 3 para no llenar la consola
                 console.log(`${prob.class_name}: ${percentage}% -> width: ${widthPercentage}%`);
             }
-            
+            /*
             probabilitiesHTML += `
                 <div class="prob-bar-container">
                     <div class="prob-bar-label">
@@ -382,10 +427,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </div>
+            `;*/
+
+            
+            probabilitiesHTML += `
+                <div class="prob-bar-container">
+                    <div class="prob-bar-label">
+                        <span>${emoji} ${materialTranslated}</span>
+                        <span style="color: ${color}; font-weight: bold;">${percentage}%</span>
+                    </div>
+                    <div class="prob-bar" style="background-color: #e9ecef; border-radius: 5px; height: 20px; position: relative; overflow: hidden;">
+                        <div style="width: ${widthPercentage}%; background-color: ${color}; height: 100%; border-radius: 5px; position: relative; transition: width 0.3s ease;">
+                            <span class="prob-bar-text" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: white; font-size: 0.75rem; font-weight: bold;">${percentage}%</span>
+                        </div>
+                    </div>
+                </div>
             `;
         });
         probabilitiesHTML += '</div>';
 
+        /*
         modalBody.innerHTML = `
             <div style="display: flex; gap: 20px; align-items: flex-start;">
             <img src="${result.image_url}" alt="${result.filename}" 
@@ -398,6 +459,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="margin: 15px 0; padding: 10px; background: ${result.color}; color: white; border-radius: 8px; text-align: center;">
                         <strong>${result.emoji} ${classDisplayNames[result.predicted_class] || result.predicted_class}</strong><br>
                         <span>Confianza: ${result.confidence.toFixed(1)}%</span>
+                    </div>
+                    ${probabilitiesHTML}
+                </div>
+            </div>
+        `;*/
+        
+        const predictedTranslated = i18next.t(`materials.${result.predicted_class}`);
+        modalBody.innerHTML = `
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <img src="${result.image_url}" alt="${result.filename}" 
+                style="max-width: 250px; max-height: 200px; object-fit: contain; border-radius: 8px; background-color: #f8f9fa; cursor: pointer;"
+                title="Ver imagen"
+                onclick="window.open('${result.image_url}', '_blank');"
+                onerror="this.style.display='none';">
+                <div style="flex: 1;">
+                    <h2>${result.filename}</h2>
+                    <div style="margin: 15px 0; padding: 10px; background: ${result.color}; color: white; border-radius: 8px; text-align: center;">
+                        <strong>${result.emoji} ${predictedTranslated}</strong><br>
+                        <span>${i18next.t('confidence_label')} ${result.confidence.toFixed(1)}%</span>
                     </div>
                     ${probabilitiesHTML}
                 </div>
@@ -419,7 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para mostrar el modal de Grad-CAM
     function showGradcamModal(result) {
-        gradcamBody.innerHTML = '<p>🔄 Generando mapas Grad-CAM...</p>';
+        //gradcamBody.innerHTML = '<p>🔄 Generando mapas Grad-CAM...</p>';
+        gradcamBody.innerHTML = `<p>🔄 ${i18next.t('generating_gradcam')}...</p>`;
         gradcamModal.style.display = 'block';
 
         fetch('/api/gradcam', {
@@ -441,7 +522,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const className = match ? match[1] : 'desconocido';
 
                     const emoji = CLASS_EMOJIS[className] || '📦';
-                    const readableName = classDisplayNames[className] || className;
+                    //const readableName = classDisplayNames[className] || className;
+                    const readableName = i18next.t(`materials.${className}`) || className;
 
                     const title = document.createElement('div');
                     title.innerHTML = `${emoji} ${readableName}`;
@@ -457,12 +539,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     gradcamBody.appendChild(wrapper);
                 });
             } else {
-                gradcamBody.innerHTML = '<p>⚠️ No se generaron mapas Grad-CAM para esta imagen.</p>';
+                //gradcamBody.innerHTML = '<p>⚠️ No se generaron mapas Grad-CAM para esta imagen.</p>';
+                gradcamBody.innerHTML = `<p>⚠️ ${i18next.t('no_gradcam_generated')}</p>`;
             }
         })
         .catch(error => {
             console.error('Error obteniendo Grad-CAM:', error);
-            gradcamBody.innerHTML = '<p>❌ Error generando mapas Grad-CAM.</p>';
+            //gradcamBody.innerHTML = '<p>❌ Error generando mapas Grad-CAM.</p>';
+            gradcamBody.innerHTML = `<p>❌ ${i18next.t('error_generating_gradcam')}</p>`;
         });
     }
     // Cerrar el modal de Grad-CAM
@@ -497,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             availableCameras = devices.filter(device => device.kind === 'videoinput');
             
             if (availableCameras.length === 0) {
-                throw new Error('No se encontraron cámaras disponibles');
+                throw new Error(i18next.t('no_camera_found'));
             }
             
             // Configurar botones según las cámaras disponibles
@@ -556,14 +640,18 @@ document.addEventListener('DOMContentLoaded', () => {
             stopCameraBtn.style.display = 'inline-block';
             capturePhotoBtn.style.display = 'inline-block';
             
-            updateCameraStatus('Cámara conectada - Detección activa', 'connected');
+            updateCameraStatus(i18next.t('camera_connected'), 'connected');
             
             // Iniciar detección automática
             startDetection();
             
         } catch (error) {
             console.error('Error iniciando cámara:', error);
-            updateCameraStatus('Error de cámara: ' + error.message, 'error');
+            // Si se quiere mantener el mensaje original de error en inglés
+            updateCameraStatus(i18next.t('camera_error') + ': ' + error.message, 'error');
+
+            // O si se prefiere solo el texto traducido
+            //updateCameraStatus(i18next.t('camera_error'), 'error');
         }
     }
     
@@ -595,10 +683,10 @@ document.addEventListener('DOMContentLoaded', () => {
         stopCameraBtn.style.display = 'none';
         capturePhotoBtn.style.display = 'none';
         
-        updateCameraStatus('Cámara desconectada', '');
+        updateCameraStatus(i18next.t('camera_disconnected'), '');
         
         // Limpiar predicción en vivo
-        updateLivePrediction('📷 Apunta a un material', '', '');
+        updateLivePrediction(i18next.t('prediction_class_no_data'), '', '');
     }
     
     async function switchCamera() {
@@ -649,8 +737,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (data.result) {
                     const result = data.result;
+                    const materialTranslated = i18next.t(`materials.${result.predicted_class}`);
                     updateLivePrediction(
-                        `${result.emoji} ${result.display_name}`,
+                        //`${result.emoji} ${result.display_name}`,
+                        `${result.emoji} ${materialTranslated}`,
                         `${result.confidence.toFixed(1)}%`,
                         result.timestamp
                     );
@@ -680,8 +770,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const formData = new FormData();
                 formData.append('files', blob, `captura_${Date.now()}.jpg`);
-                
-                showNotification('Procesando captura...', 'info');
+
+                showNotification(i18next.t('processing_capture'), 'info');
                 
                 const response = await fetch('/classify', {
                     method: 'POST',
@@ -704,11 +794,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Actualizar progress-text para capturas
                     const progressText = document.getElementById('progress-text');
                     if (progressText) {
-                        progressText.textContent = 'Análisis completado: 1 captura procesada.';
+                        progressText.textContent = i18next.t('analysis_completed_capture');
                     }
                     
                     displayResults(data.results);
-                    showNotification('Captura procesada exitosamente', 'success');
+                    showNotification(i18next.t('capture_processed_success'), 'success');
 
                     // Actualizar estadísticas con la captura
                     updateLocalStats(data.results);
@@ -731,16 +821,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             } catch (error) {
                 console.error('Error capturando foto:', error);
-                showNotification('Error capturando foto', 'error');
+                showNotification(i18next.t('error_capture'), 'error');
             }
         }, 'image/jpeg', 0.9);
     }
     
-    function updateCameraStatus(message, statusClass) {
-        if (cameraStatus) {
-            cameraStatus.textContent = message;
-            cameraStatus.className = 'camera-status ' + statusClass;
-        }
+    function updateCameraStatus(message, statusClass) { 
+        if (cameraStatus) { 
+            cameraStatus.textContent = message; 
+            cameraStatus.className = 'camera-status ' + statusClass; 
+        } 
     }
     
     function updateLivePrediction(classText, confidence, time) {
@@ -750,8 +840,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeEl = livePrediction.querySelector('.prediction-time');
             
             if (classEl) classEl.textContent = classText;
-            if (confidenceEl) confidenceEl.textContent = confidence ? `Confianza: ${confidence}` : 'Confianza: --';
-            if (timeEl) timeEl.textContent = time ? `Última detección: ${time}` : 'Última detección: --';
+            //if (confidenceEl) confidenceEl.textContent = confidence ? `Confianza: ${confidence}` : 'Confianza: --';
+            //if (timeEl) timeEl.textContent = time ? `Última detección: ${time}` : 'Última detección: --';
+            if (confidenceEl) confidenceEl.textContent = confidence ? `${i18next.t('prediction_confidence')} ${confidence}` : `${i18next.t('prediction_confidence_no_data')}`;
+            if (timeEl) timeEl.textContent = time ? `${i18next.t('last_detection')} ${time}` : `${i18next.t('last_detection_no_data')}`;
         }
     }
 
@@ -768,6 +860,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 (sessionStats.classCount[result.predicted_class] || 0) + 1;
             sessionStats.confidenceLevels.push(result.confidence / 100); // normalizado 0-1
         });
+
+        localStorage.setItem('sessionStats', JSON.stringify(sessionStats));
 
         updateStatsDisplay();
 
@@ -791,12 +885,84 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             if (mostCommon) {
                 const emoji = CLASS_EMOJIS[mostCommon] || '';
-                const displayName = classDisplayNames[mostCommon] || mostCommon;
+                //const displayName = classDisplayNames[mostCommon] || mostCommon;
+                const displayName = i18next.t(`materials.${mostCommon}`);
                 mostCommonEl.textContent = `${emoji} ${displayName} (${sessionStats.classCount[mostCommon]})`;
             } else {
                 mostCommonEl.textContent = 'N/A';
             }
         }
+    }
+
+    /*
+    // Escuchar cuando i18next ya está listo
+    document.addEventListener('i18nInitialized', () => {
+        // Restaurar sessionStats de localStorage solo cuando i18next ya está listo
+        const savedStats = localStorage.getItem('sessionStats');
+        if (savedStats) {
+            sessionStats = JSON.parse(savedStats);
+        }
+        // Actualizar estadísticas
+        updateStatsDisplay();
+    });
+    */
+
+    // Restaurar sessionStats y actualizar la UI cuando i18next esté listo y el idioma seleccionado se haya aplicado.
+    // Esto evita la situacion donde main.js restaura y pinta antes de que i18next haya cargado las traducciones o antes de que changeLanguage haya terminado.
+    function restoreStatsAndUpdate() {
+        const savedStats = localStorage.getItem('sessionStats');
+        if (savedStats) {
+            try {
+                sessionStats = JSON.parse(savedStats);
+            } catch (e) {
+                console.warn('No se pudo parsear sessionStats desde localStorage:', e);
+                sessionStats = { totalProcessed: 0, confidenceSum: 0, classCount: {}, confidenceLevels: [] };
+            }
+        }
+        // Actualizar estadísticas (usa i18next.t internamente cuando corresponda)
+        updateStatsDisplay();
+
+        // Habilitar export si hay resultados
+        if (exportBtn && sessionStats.totalProcessed > 0) exportBtn.disabled = false;
+    }
+
+    // Comprueba si hay un idioma guardado por el usuario
+    const savedLang = localStorage.getItem('selectedLang');
+
+    if (window.i18next && window.i18next.isInitialized) {
+        // i18next ya está inicializado. Si el idioma actual coincide con el guardado (o no hay guardado), restaura ahora.
+        if (!savedLang || i18next.language === savedLang) {
+            restoreStatsAndUpdate();
+        } else {
+            // Esperar al cambio de idioma si aún no se ha aplicado
+            if (i18next.on) {
+                i18next.on('languageChanged', function handler() {
+                    restoreStatsAndUpdate();
+                    // limpiar handler para evitar ejecuciones futuras innecesarias
+                    if (i18next.off) i18next.off('languageChanged', handler);
+                });
+            } else {
+                // Fallback: escucha el evento personalizado
+                document.addEventListener('i18nInitialized', restoreStatsAndUpdate, { once: true });
+            }
+        }
+    } else {
+        // i18next no está listo aún; esperar al evento de inicialización y luego aplicar la misma lógica
+        document.addEventListener('i18nInitialized', () => {
+            if (!savedLang || i18next.language === savedLang) {
+                restoreStatsAndUpdate();
+            } else {
+                if (i18next.on) {
+                    i18next.on('languageChanged', function handler() {
+                        restoreStatsAndUpdate();
+                        if (i18next.off) i18next.off('languageChanged', handler);
+                    });
+                } else {
+                    // último recurso: restaurar de todas formas
+                    restoreStatsAndUpdate();
+                }
+            }
+        }, { once: true });
     }
 
     // === MODAL DE ESTADÍSTICAS ===
@@ -805,7 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showStatsModal() {
         if (sessionStats.totalProcessed === 0) {
-            alert('No hay datos para mostrar. Procesa algunas imágenes primero.');
+            alert(i18next.t('no_data_stats'));
             return;
         }
 
@@ -834,13 +1000,15 @@ document.addEventListener('DOMContentLoaded', () => {
         classChartInstance = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: classes.map(c => classDisplayNames[c] || c),
+                //labels: classes.map(c => classDisplayNames[c] || c),
+                labels: classes.map(c => i18next.t(`materials.${c}`)),
                 datasets: [{ data: values, backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    title: { display: true, text: 'Material con mayor porcentaje por foto' },
+                    //title: { display: true, text: 'Material con mayor porcentaje por foto' },
+                    title: { display: true, text: i18next.t('class_distribution_chart_description') },
                     legend: { position: 'right' }
                 }
             }
@@ -862,11 +1030,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         confidenceChartInstance = new Chart(ctx, {
             type: 'bar',
-            data: { labels: ranges, datasets: [{ label: 'Cantidad', data: counts, backgroundColor: '#3498db', borderColor: '#2980b9', borderWidth: 1 }] },
+            //data: { labels: ranges, datasets: [{ label: 'Cantidad', data: counts, backgroundColor: '#3498db', borderColor: '#2980b9', borderWidth: 1 }] },
+            data: { labels: ranges, datasets: [{ label: i18next.t('amount'), data: counts, backgroundColor: '#3498db', borderColor: '#2980b9', borderWidth: 1 }] },
             options: {
                 responsive: true,
                 scales: { y: { beginAtZero: true, precision: 0 } },
-                plugins: { title: { display: true, text: 'Nivel de confianza más alto por foto' }, legend: { display: false } }
+                //plugins: { title: { display: true, text: 'Nivel de confianza más alto por foto' }, legend: { display: false } }
+                plugins: { title: { display: true, text: i18next.t('confidence_levels_chart_description') }, legend: { display: false } }
             }
         });
     }
@@ -874,9 +1044,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // -- EXPORTAR RESULTADOS --
     async function exportResults() {
         try {
-            const response = await fetch('/api/export');
+            // Detecta idioma actual desde i18next
+            const lang = i18next.language;
+            const response = await fetch(`/api/export?lang=${lang}`);
             if (!response.ok) {
-                throw new Error('No hay resultados para exportar');
+                //throw new Error('No hay resultados para exportar');
+                throw new Error(i18next.t('no_results_to_export'));
             }
 
             // Obtener el nombre real del archivo desde el header Content-Disposition
@@ -897,16 +1070,19 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
 
-            showNotification(`✅ Resultados exportados como ${filename}`, 'success');
+            //showNotification(`✅ Resultados exportados como ${filename}`, 'success');
+            showNotification(i18next.t('export_success', { filename: filename }), 'success');
         } catch (error) {
             console.error('Error exportando:', error);
-            showNotification('❌ Error al exportar resultados', 'error');
+            //showNotification('❌ Error al exportar resultados', 'error');
+            showNotification(i18next.t('export_error'), 'error');
         }
     }
 
     // -- LIMPIAR SESIÓN --
     function clearSession() {
-        if (!confirm('¿Estás seguro de que quieres limpiar la sesión actual?')) return;
+        //if (!confirm('¿Estás seguro de que quieres limpiar la sesión actual?')) return;
+        if (!confirm(i18next.t('clear_session_confirm'))) return;
 
         // Limpiar estadísticas
         sessionStats = {
@@ -918,6 +1094,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Limpiar resultados guardados para exportar
         sessionResults = [];
+
+        // Borrar también del localStorage
+        localStorage.removeItem('sessionStats');
 
         updateStatsDisplay();
 
@@ -942,19 +1121,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newResultsGrid = doc.querySelector('#results-grid');
                 if (newResultsGrid && resultsGrid) {
                     resultsGrid.innerHTML = newResultsGrid.innerHTML;
+
+                    // Reaplicar traducciones al nuevo contenido
+                    updateContent();
                 }
 
                 // Resetear el área de estado
                 const loader = document.getElementById('loader');
                 const progressText = document.getElementById('progress-text');
                 if (loader) loader.style.display = 'none';
-                if (progressText) progressText.textContent = 'Listo para análisis';
+                //if (progressText) progressText.textContent = 'Listo para análisis';
+                if (progressText) progressText.textContent = i18next.t('status_ready');
 
-                showNotification('🧹 Sesión limpiada', 'info');
+                //showNotification('🧹 Sesión limpiada', 'info');
+                showNotification(i18next.t('session_cleared'), 'info');
             })
             .catch(err => {
                 console.error('Error recargando pantalla inicial:', err);
-                showNotification('❌ No se pudo recargar la pantalla inicial', 'error');
+                //showNotification('❌ No se pudo recargar la pantalla inicial', 'error');
+                showNotification(i18next.t('clear_session_error'), 'error');
             });
     }
 

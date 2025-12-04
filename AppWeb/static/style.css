@@ -35,6 +35,7 @@ body {
     padding: 15px 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     flex-shrink: 0;
+    position: relative; /* Para el interruptor de idioma */
 }
 
 .main-header h1 {
@@ -870,4 +871,63 @@ body {
 .stat-mini:hover {
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Contenedor del selector de idioma */
+.language-switcher {
+    position: absolute;
+    top: 50%;               /* centro vertical relativo al header */
+    right: 40px;
+    transform: translateY(-50%); /* mueve hacia arriba la mitad de su altura */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+/* Estilo del select */
+#lang-select {
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: all 0.2s ease;
+    min-width: 140px;
+    height: 36px;
+    line-height: 36px;
+
+    /* Imagen fija: globo a la izquierda + flecha a la derecha */
+    background-image: 
+        url("/static/img/globe.svg"), 
+        url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpolygon points='0,0 10,0 5,5' fill='%23666'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, no-repeat;
+    background-position: 12px center, right 8px center;
+    background-size: 20px 20px, 10px 10px;
+
+    /* Centrado “visual” del texto */
+    padding-left: 50px;  /* deja espacio para el globo */
+    padding-right: 30px; /* deja espacio para la flecha */
+}
+
+/* Hover y focus */
+#lang-select:hover {
+    border-color: #888;
+}
+
+#lang-select:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+}
+
+/* Alineación de opciones del dropdown */
+#lang-select option {
+    text-align: left; /* siempre alineadas a la izquierda */
+    padding-left: 5px; /* pequeño padding visual */
 }
