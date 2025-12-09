@@ -757,7 +757,7 @@ body {
 /* Botones de herramientas */
 .tool-button {
     width: 100%;
-    padding: 10px;
+    padding: 9px;
     margin-bottom: 8px;
     background: var(--primary-color);
     color: white;
@@ -769,12 +769,21 @@ body {
 }
 
 .tool-button:hover:not(:disabled) {
-    background: var(--secondary-color);
+    background: var(--primary-color);
+    filter: brightness(160%);
     transform: translateY(-1px);
 }
 
+/* OLD VERSION
+.tool-button:hover:not(:disabled) {
+    background: var(--secondary-color);
+    transform: translateY(-1px);
+}
+*/
+
 .tool-button:disabled {
     background: #6c757d;
+    border: 1px solid #6c757d; /* new line */
     cursor: not-allowed;
     opacity: 0.6;
 }

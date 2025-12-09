@@ -55,6 +55,7 @@
   "processing_capture": "Processing screenshot...",
   "analysis_completed_capture": "Analysis completed: 1 screenshot processed.",
   "capture_processed_success": "Screenshot processed successfully.",
+  "capture": "capture",
   "error_capture": "Error taking screenshot.",
 
   "dashboard_stats": "📊 Statistics dashboard",

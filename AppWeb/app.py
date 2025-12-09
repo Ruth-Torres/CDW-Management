@@ -419,7 +419,7 @@ def classify_images():
                     # Limpiar y asegurar el nombre del archivo
                     filename = secure_filename(file.filename)
                     if not filename:
-                        filename = f"imagen_{i+1}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                        filename = f"image_{i+1}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
                     
                     # Agregar timestamp para evitar conflictos
                     name, ext = os.path.splitext(filename)

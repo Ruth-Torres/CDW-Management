@@ -55,6 +55,7 @@
   "processing_capture": "Traitement de la capture...",
   "analysis_completed_capture": "Analyse terminée : 1 capture traitée.",
   "capture_processed_success": "Capture traitée avec succès.",
+  "capture": "capture",
   "error_capture": "Erreur lors de la capture.",
 
   "dashboard_stats": "📊 Tableau de bord des statistiques",

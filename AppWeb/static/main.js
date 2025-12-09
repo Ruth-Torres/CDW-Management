@@ -769,7 +769,8 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.toBlob(async (blob) => {
             try {
                 const formData = new FormData();
-                formData.append('files', blob, `captura_${Date.now()}.jpg`);
+                //formData.append('files', blob, `captura_${Date.now()}.jpg`);
+                formData.append('files', blob, i18next.t('capture')+`_${Date.now()}.jpg`);
 
                 showNotification(i18next.t('processing_capture'), 'info');
                 
