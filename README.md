@@ -82,3 +82,14 @@ http://127.0.0.1:5000/
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## ⚠️ NOTICE:
+
+This web application expects trained models to use class names in SPANISH in the same order:
+
+`'hormigon', 'ceramico', 'piedra', 'yeso', 'asfaltico', 'basura_general'`.
+
+If models are trained with different class names, the application may not work correctly (for example, emojis, colors, or i18next translations may not match).
+
+The app is distributed under the MIT license, so no guarantees are provided if the model or class names are modified.
+
