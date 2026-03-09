@@ -1110,6 +1110,12 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => console.log(data.message))
             .catch(err => console.error('Error limpiando sesión en backend:', err));
 
+        // Limpiar archivos
+        fetch('/cleanup', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => console.log(data.message))
+            .catch(err => console.error('Error limpiando carpetas:', err));
+            
         // Limpiar resultados y volver a cargar pantalla inicial desde Flask
         fetch('/')
             .then(response => response.text())

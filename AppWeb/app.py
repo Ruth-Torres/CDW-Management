@@ -1,4 +1,15 @@
 import os
+import sys
+
+# Colores ANSI 
+VERDE = "\033[92m" 
+AZUL = "\033[94m" 
+AMARILLO = "\033[93m" 
+ROJO = "\033[91m"
+CIAN = "\033[96m"
+RESET = "\033[0m"
+
+# --- Importar librerías de Python / PyTorch ---
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -16,23 +27,49 @@ import io
 # Usar ruta absoluta para evitar problemas
 # Aquí se definen las carpetas donde se guardarán imágenes subidas
 # y las salidas de Grad-CAM, además de los formatos de archivo permitidos.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+# GRADCAM_FOLDER = os.path.join(BASE_DIR, 'gradcam_outputs')
+
+# ========================
+# RUTAS ABSOLUTAS PARA PORTABLE
+# ========================
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS  # Si es .exe generado por PyInstaller
+    print(f"{AZUL}[INFO]{RESET} Modo EXE detectado. BASE_DIR = {VERDE}{BASE_DIR}{RESET}")
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    print(f"{AZUL}[INFO]{RESET} Modo script .py. BASE_DIR = {VERDE}{BASE_DIR}{RESET}")
+
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 GRADCAM_FOLDER = os.path.join(BASE_DIR, 'gradcam_outputs')
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+MODEL_PATH = os.path.join(BASE_DIR, 'best_resnet_multilabel_v5.pt')
+print(f"{AZUL}[INFO]{RESET} Modelo en: {VERDE}{MODEL_PATH}{RESET}")
+
+# Traducciones
+LOCALES_DIR = os.path.join(STATIC_DIR, 'locales')
+TRANSLATIONS_PATH = os.path.join(LOCALES_DIR, 'translations.json')
+TRANSLATIONS_FILES = {
+    'en': os.path.join(LOCALES_DIR, 'en.json'),
+    'es': os.path.join(LOCALES_DIR, 'es.json'),
+    'fr': os.path.join(LOCALES_DIR, 'fr.json'),
+}
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['GRADCAM_FOLDER'] = GRADCAM_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = None  # Sin límite de tamaño
 
 # Crear la carpeta de subidas si no existe
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-print(f"Carpeta de uploads: {UPLOAD_FOLDER}")
+print(f"{AZUL}[INFO]{RESET} Carpeta de uploads: {VERDE}{UPLOAD_FOLDER}{RESET}")
 
 # Crear la carpeta de Grad-CAM si no existe
 os.makedirs(GRADCAM_FOLDER, exist_ok=True)
-print(f"Carpeta de gradcam_outputs: {GRADCAM_FOLDER}")
+print(f"{AZUL}[INFO]{RESET} Carpeta de gradcam_outputs: {VERDE}{GRADCAM_FOLDER}{RESET}")
 
 # --- Definiciones del Modelo ---
 # Estas estructuras sirven para mapear nombres de clases a emojis,
@@ -85,7 +122,7 @@ def load_model():
             model_path = os.path.join(os.path.dirname(BASE_DIR), nombre_archivo)
 
         if not os.path.exists(model_path):
-            raise FileNotFoundError(f"No se encontró el archivo {nombre_archivo} en {model_path}")
+            raise FileNotFoundError( f"{ROJO}[ERROR]{RESET} No se encontró el archivo {AMARILLO}{nombre_archivo}{RESET} en {AMARILLO}{model_path}{RESET}" )
 
         # Cargar modelo
         model = resnet50(weights=None)
@@ -107,10 +144,10 @@ def load_model():
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
-        print(f"Modelo cargado exitosamente desde {model_path} en {device}")
+        print(f"{AZUL}[INFO]{RESET} Modelo cargado exitosamente desde {VERDE}{model_path}{RESET} en {VERDE}{device}{RESET}")
         
     except Exception as e:
-        print(f"Error cargando el modelo: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error cargando el modelo: {ROJO}{e}{RESET}")
         raise
 
 def predict_image(image_path):
@@ -118,17 +155,17 @@ def predict_image(image_path):
     # Devuelve:
     #   - predicted_class: nombre crudo de la clase más probable
     #   - confidence: probabilidad de la clase ganadora (0–100%)
-    #   - detailed_probs: lista de todas las clases con sus probabilidades, ordenadas desc.
+    #   - detailed_probs: lista de todas las clases con sus probabilidades, ordenadas descendientemente
     if not model:
-        raise RuntimeError("El modelo no está cargado.")
+        raise RuntimeError(f"{ROJO}[ERROR]{RESET} El modelo no está cargado.")
 
     try:
         start_time = datetime.now()
-        print(f"Prediciendo imagen: {image_path}")
+        print(f"{CIAN}[TRACE]{RESET} Prediciendo imagen: {VERDE}{image_path}{RESET}")
         
         # Verificar que el archivo existe antes de abrirlo
         if not os.path.exists(image_path):
-            raise FileNotFoundError(f"No se encontró la imagen: {image_path}")
+            raise FileNotFoundError(f"{ROJO}[ERROR]{RESET} No se encontró la imagen: {AMARILLO}{image_path}{RESET}")
         
         image = Image.open(image_path).convert('RGB')
         img_t = transform(image).unsqueeze(0).to(device)
@@ -164,11 +201,11 @@ def predict_image(image_path):
             # Actualizar estadísticas
             update_stats(predicted_class, confidence_percent, processing_time)
             
-            print(f"Predicción exitosa: {predicted_class} ({confidence_percent:.1f}%) - Tiempo: {processing_time:.2f}s")
+            print(f"{AZUL}[INFO]{RESET} Predicción exitosa: {VERDE}{predicted_class}{RESET} ({AMARILLO}{confidence_percent:.1f}%{RESET}) - Tiempo: {AMARILLO}{processing_time:.2f}s{RESET}")
             return predicted_class, confidence_percent, detailed_probs
 
     except Exception as e:
-        print(f"Error prediciendo la imagen {image_path}: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error prediciendo la imagen {AMARILLO}{image_path}{RESET}: {ROJO}{e}{RESET}")
         return None, None, None
 
 def allowed_file(filename):
@@ -185,14 +222,14 @@ def clean_uploads_folder():
                 try:
                     if os.path.isfile(file_path):
                         os.unlink(file_path)
-                        print(f"Archivo eliminado: {filename}")
+                        print(f"{AZUL}[INFO]{RESET} Archivo eliminado: {VERDE}{filename}{RESET}")
                 except Exception as e:
-                    print(f"Error eliminando archivo {filename}: {e}")
-            print("Limpieza de carpeta uploads completada")
+                    print(f"{ROJO}[ERROR]{RESET} Error eliminando archivo {AMARILLO}{filename}{RESET}: {ROJO}{e}{RESET}")
+            print(f"{AZUL}[INFO]{RESET} Limpieza de carpeta uploads completada")
         else:
-            print("La carpeta uploads no existe")
+            print(f"{AMARILLO}[WARNING]{RESET} La carpeta uploads no existe")
     except Exception as e:
-        print(f"Error durante la limpieza de uploads: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error durante la limpieza de uploads: {ROJO}{e}{RESET}")
 
 def clean_gradcam_folder():
     """Elimina todos los archivos de la carpeta gradcam_outputs."""
@@ -204,14 +241,14 @@ def clean_gradcam_folder():
                 try:
                     if os.path.isfile(file_path):
                         os.unlink(file_path)
-                        print(f"Archivo eliminado: {filename}")
+                        print(f"{AZUL}[INFO]{RESET} Archivo eliminado: {VERDE}{filename}{RESET}")
                 except Exception as e:
-                    print(f"Error eliminando archivo {filename}: {e}")
-            print("Limpieza de carpeta gradcam_outputs completada")
+                    print(f"{ROJO}[ERROR]{RESET} Error eliminando archivo {AMARILLO}{filename}{RESET}: {ROJO}{e}{RESET}")
+            print(f"{AZUL}[INFO]{RESET} Limpieza de carpeta gradcam_outputs completada")
         else:
-            print("La carpeta gradcam_outputs no existe")
+            print(f"{AMARILLO}[WARNING]{RESET} La carpeta gradcam_outputs no existe")
     except Exception as e:
-        print(f"Error durante la limpieza de gradcam_outputs: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error durante la limpieza de gradcam_outputs: {ROJO}{e}{RESET}")
 
 def clean_old_files(hours=24):
     """Elimina archivos más antiguos que el número de horas especificado."""
@@ -372,7 +409,7 @@ def internal_error(e):
 # - /api/gradcam : Generación de Grad-CAM
 
 # Cargar traducciones
-with open(os.path.join(BASE_DIR, "static/locales/translations.json"), "r", encoding="utf-8") as f:
+with open(TRANSLATIONS_PATH, "r", encoding="utf-8") as f:
     TRANSLATIONS = json.load(f)
 
 @app.route('/')
@@ -397,8 +434,8 @@ def classify_images():
         print("=== Iniciando clasificación ===")
         
         # Limpiar archivos anteriores antes de procesar nuevos
-        print("Limpiando archivos anteriores...")
-        clean_uploads_folder()
+        # print("Limpiando archivos anteriores...")
+        # clean_uploads_folder()
         
         if 'files' not in request.files:
             return jsonify({'error': 'No se encontraron archivos en la solicitud'}), 400
@@ -409,10 +446,10 @@ def classify_images():
         if not files or files[0].filename == '':
             return jsonify({'error': 'No se seleccionaron archivos'}), 400
 
-        print(f"Procesando {len(files)} archivos")
+        print(f"{AZUL}[INFO]{RESET} Procesando {AMARILLO}{len(files)}{RESET} archivos")
 
         for i, file in enumerate(files):
-            print(f"Procesando archivo {i+1}/{len(files)}: {file.filename}")
+            print(f"{CIAN}[TRACE]{RESET} Procesando archivo {AMARILLO}{i+1}/{len(files)}{RESET}: {VERDE}{file.filename}{RESET}")
             
             if file and allowed_file(file.filename):
                 try:
@@ -430,13 +467,13 @@ def classify_images():
                     # Asegurar que la carpeta existe
                     os.makedirs(os.path.dirname(filepath), exist_ok=True)
                     
-                    print(f"Guardando en: {filepath}")
+                    print(f"{CIAN}[TRACE]{RESET} Guardando en: {VERDE}{filepath}{RESET}")
                     
                     # Guardar archivo con manejo de errores mejorado
                     try:
                         file.save(filepath)
                     except Exception as save_error:
-                        print(f"Error guardando archivo: {save_error}")
+                        print(f"{ROJO}[ERROR]{RESET} Error guardando archivo: {ROJO}{save_error}{RESET}")
                         # Reintentar con un nombre diferente
                         filename = f"backup_{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
                         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -445,12 +482,12 @@ def classify_images():
                     # Verificar que se guardó correctamente con reintentos
                     retries = 3
                     while retries > 0 and not os.path.exists(filepath):
-                        print(f"Archivo no encontrado, reintentando... ({retries} intentos restantes)")
+                        print(f"{AMARILLO}[WARNING]{RESET} Archivo no encontrado, reintentando... ({AMARILLO}{retries}{RESET} intentos restantes)")
                         file.save(filepath)
                         retries -= 1
                     
                     if not os.path.exists(filepath):
-                        print(f"Error: El archivo no se guardó correctamente después de varios intentos: {filepath}")
+                        print(f"{ROJO}[ERROR]{RESET} El archivo no se guardó correctamente después de varios intentos: {AMARILLO}{filepath}{RESET}")
                         continue
                     
                     # Realizar predicción
@@ -472,15 +509,15 @@ def classify_images():
                         results.append(result_data)
                         # Guardar resultado en la sesión para exportación
                         save_session_result(result_data)
-                        print(f"Archivo procesado exitosamente: {filename}")
+                        print(f"{CIAN}[TRACE]{RESET} Archivo procesado exitosamente: {VERDE}{filename}{RESET}")
                     else:
-                        print(f"Error en la predicción de {filename}")
+                        print(f"{ROJO}[ERROR]{RESET} Error en la predicción de {AMARILLO}{filename}{RESET}")
                         
                 except Exception as file_error:
-                    print(f"Error procesando archivo {file.filename}: {file_error}")
+                    print(f"{ROJO}[ERROR]{RESET} Error procesando archivo {AMARILLO}{file.filename}{RESET}: {ROJO}{file_error}{RESET}")
                     continue
             else:
-                print(f"Archivo no permitido o inválido: {file.filename}")
+                print(f"{AMARILLO}[WARNING]{RESET} Archivo no permitido o inválido: {AMARILLO}{file.filename}{RESET}")
 
         print(f"=== Clasificación completada: {len(results)} resultados ===")
         
@@ -490,7 +527,7 @@ def classify_images():
         return jsonify({'results': results})
         
     except Exception as e:
-        print(f"Error general en clasificación: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error general en clasificación: {ROJO}{e}{RESET}")
         return jsonify({'error': f'Error interno del servidor. Detalles: {str(e)}'}), 500
 
 @app.route('/uploads/<filename>')
@@ -499,12 +536,12 @@ def uploaded_file(filename):
     try:
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         if not os.path.exists(filepath):
-            print(f"Archivo no encontrado: {filepath}")
+            print(f"{ROJO}[ERROR]{RESET} Archivo no encontrado: {AMARILLO}{filepath}{RESET}")
             return jsonify({'error': 'Archivo no encontrado'}), 404
         
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except Exception as e:
-        print(f"Error sirviendo archivo {filename}: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error sirviendo archivo {AMARILLO}{filename}{RESET}: {ROJO}{e}{RESET}")
         return jsonify({'error': 'Error sirviendo archivo'}), 500
 
 @app.route('/cleanup', methods=['POST'])
@@ -515,8 +552,8 @@ def manual_cleanup():
         clean_gradcam_folder()
         return jsonify({'message': 'Carpetas uploads y gradcam_outputs limpiadas exitosamente'}), 200
     except Exception as e:
-        print(f"Error en limpieza manual: {e}")
-        return jsonify({'error': f'Error limpiando uploads: {str(e)}'}), 500
+        print(f"{ROJO}[ERROR]{RESET} Error en limpieza manual: {ROJO}{e}{RESET}")
+        return jsonify({'error': f'Error limpiando uploads o gradcam_outputs: {str(e)}'}), 500
 
 @app.route('/api/stats')
 def get_api_statistics():
@@ -525,7 +562,7 @@ def get_api_statistics():
         stats_summary = get_stats_summary()
         return jsonify(stats_summary), 200
     except Exception as e:
-        print(f"Error obteniendo estadísticas: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error obteniendo estadísticas: {ROJO}{e}{RESET}")
         return jsonify({'error': 'Error obteniendo estadísticas'}), 500
 
 @app.route('/api/export', methods=['GET'])
@@ -548,9 +585,8 @@ def export_session_results():
         )
         return response
     except Exception as e:
-        print(f"Error exportando resultados: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error exportando resultados: {ROJO}{e}{RESET}")
         return jsonify({'error': 'Error exportando resultados'}), 500
-
 
 @app.route('/api/clear_session', methods=['POST'])
 def clear_session_api():
@@ -600,13 +636,13 @@ def classify_camera_frame():
                     return jsonify({'result': result})
                     
             except Exception as e:
-                print(f"Error procesando frame de cámara: {e}")
+                print(f"{ROJO}[ERROR]{RESET} Error procesando frame de cámara: {ROJO}{e}{RESET}")
                 return jsonify({'error': 'Error procesando imagen'}), 500
         
         return jsonify({'error': 'Archivo inválido'}), 400
         
     except Exception as e:
-        print(f"Error en endpoint de cámara: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error en endpoint de cámara: {ROJO}{e}{RESET}")
         return jsonify({'error': 'Error interno del servidor'}), 500
 
 @app.route('/api/health')
@@ -652,7 +688,7 @@ def generate_gradcam():
         return jsonify({'heatmap_urls': gradcam_urls}), 200
 
     except Exception as e:
-        print(f"Error en /api/gradcam: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error generando Grad-CAM: {ROJO}{e}{RESET}")
         return jsonify({'error': 'Error generando Grad-CAM'}), 500
 
 @app.route('/gradcam_outputs/<filename>')
@@ -667,12 +703,12 @@ if __name__ == '__main__':
         load_model()  # Cargar el modelo al iniciar
         
         # Limpiar archivos antiguos al iniciar (opcional)
-        print("Limpiando archivos antiguos al iniciar servidor...")
-        clean_uploads_folder()        # Limpia uploads
-        clean_gradcam_folder()        # Limpia gradcam_outputs
-        clean_old_files(hours=24)     # Elimina archivos de más de 24 horas
+        # print("Limpiando archivos antiguos al iniciar servidor...")
+        # clean_uploads_folder()        # Limpia uploads
+        # clean_gradcam_folder()        # Limpia gradcam_outputs
+        # clean_old_files(hours=24)     # Elimina archivos de más de 24 horas
         
-        print(f"Servidor iniciado. Carpeta uploads: {UPLOAD_FOLDER}")
-        app.run(debug=True, host='127.0.0.1', port=5000)
+        print(f"{VERDE}[INFO]{RESET} Servidor iniciado.")
+        app.run(debug=False, host='127.0.0.1', port=5000)
     except Exception as e:
-        print(f"Error iniciando la aplicación: {e}")
+        print(f"{ROJO}[ERROR]{RESET} Error iniciando la aplicación: {ROJO}{e}{RESET}")

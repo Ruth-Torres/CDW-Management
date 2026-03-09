@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="title">🏗️ Clasificador Inteligente de Materiales</title>
+    <title data-i18n="title_no_emoji">Clasificador Inteligente de Materiales</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
 </head>
@@ -227,16 +227,19 @@
 
 
     <!-- 1. i18next core -->
-    <script src="{{ url_for('static', filename='i18next.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='i18next_library/i18next.min.js') }}"></script>
 
     <!-- 2. Backend -->
-    <script src="{{ url_for('static', filename='i18nextHttpBackend.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='i18next_library/i18nextHttpBackend.min.js') }}"></script>
 
     <!-- 3. Language detector -->
-    <script src="{{ url_for('static', filename='i18nextBrowserLanguageDetector.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='i18next_library/i18nextBrowserLanguageDetector.min.js') }}"></script>
 
-    <!-- 4. Tu script de inicialización -->
+    <!-- 4. Script de inicialización -->
     <script src="{{ url_for('static', filename='i18n.js') }}?v=1.0"></script>
+
+    <!-- 5. Chart.js -->
+    <script src="{{ url_for('static', filename='chartjs_library/chart.js') }}"></script>
 
     <!-- 1. i18next core -->
     <!-- <script src="https://unpkg.com/i18next@23.4.6/dist/umd/i18next.min.js"></script> -->
@@ -247,7 +250,9 @@
     <!-- 3. Language detector -->
     <!-- <script src="https://unpkg.com/i18next-browser-languagedetector@8.2.0/dist/umd/i18nextBrowserLanguageDetector.min.js"></script> -->
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 5. Chart.js -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+     
     <script src="{{ url_for('static', filename='main.js') }}?v=5.0"></script>
 
 </body>
